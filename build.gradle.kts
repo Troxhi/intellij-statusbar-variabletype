@@ -1,7 +1,7 @@
 plugins {
     id("java")
     id("org.jetbrains.kotlin.jvm") version "1.9.25"
-    id("org.jetbrains.intellij") version "1.17.4"
+    id("org.jetbrains.intellij.platform") version "2.0.1"
 }
 
 group = "com.timobaumberger"
@@ -9,15 +9,20 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+    intellijPlatform {
+        defaultRepositories()
+    }
 }
 
-// Configure Gradle IntelliJ Plugin
-// Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
-intellij {
-    version.set("2024.3.4.1")
-    type.set("IC") // Target IDE Platform
+intellijPlatform {
+    instrumentCode = false
+}
 
-    plugins.set(listOf("PythonCore:243.24978.46"))
+dependencies {
+    intellijPlatform {
+        pycharmCommunity("2024.3.5")
+        bundledPlugin("PythonCore")
+    }
 }
 
 tasks {
@@ -33,15 +38,5 @@ tasks {
     patchPluginXml {
         sinceBuild.set("241")
         untilBuild.set("243.*")
-    }
-
-    signPlugin {
-        certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
-        privateKey.set(System.getenv("PRIVATE_KEY"))
-        password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
-    }
-
-    publishPlugin {
-        token.set(System.getenv("PUBLISH_TOKEN"))
     }
 }
