@@ -12,6 +12,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.StatusBar
+import com.intellij.openapi.wm.StatusBarListener
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.impl.status.EditorBasedWidget
 import com.intellij.psi.PsiManager
@@ -39,14 +40,20 @@ class VarTypeStatusBarWidget(project: Project) : EditorBasedWidget(project), Sta
                 override fun fileOpened(source: FileEditorManager, file: VirtualFile) = requestUpdate()
             })
 
+        statusBar.addListener(object : StatusBarListener {
+            override fun widgetAdded(widget: StatusBarWidget, anchor: String?) {
+                if (widget.ID() == WIDGET_ID) {
+                    requestUpdate()
+                }
+            }
+        }, disposable)
+
         val multicaster = EditorFactory.getInstance().eventMulticaster
         multicaster.addCaretListener(object : CaretListener {
             override fun caretPositionChanged(event: CaretEvent) = requestUpdate()
             override fun caretAdded(event: CaretEvent) = requestUpdate()
             override fun caretRemoved(event: CaretEvent) = requestUpdate()
         }, disposable)
-
-        requestUpdate()
     }
 
     override fun getAlignment(): Float = Component.CENTER_ALIGNMENT
@@ -70,7 +77,8 @@ class VarTypeStatusBarWidget(project: Project) : EditorBasedWidget(project), Sta
         if (editor.caretModel.caretCount != 1) return hideAndUpdate()
 
         val virtualFile = editor.virtualFile ?: return hideAndUpdate()
-        val psiFile = runReadAction { PsiManager.getInstance(project).findFile(virtualFile) as? PyFile } ?: return hideAndUpdate()
+        val psiFile =
+            runReadAction { PsiManager.getInstance(project).findFile(virtualFile) as? PyFile } ?: return hideAndUpdate()
 
         val psiElement = runReadAction { psiFile.findElementAt(editor.caretModel.offset) } ?: return hideAndUpdate()
         val psiParent = runReadAction { psiElement.parent as? PyTypedElement } ?: return hideAndUpdate()
